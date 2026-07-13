@@ -39,6 +39,19 @@ export function createConfiguratorActions(page: Page) {
       await this.expectDefaultConfiguration()
     },
 
+    async startFromLanding() {
+      await page.goto('/')
+      await expect(page.getByTestId('landing-page')).toBeVisible()
+      await expect(page.getByTestId('hero-section').getByRole('heading', { name: 'Velô Sprint' })).toBeVisible()
+
+      await page.evaluate(() => localStorage.removeItem('velo-configurator-storage'))
+      await page.getByRole('link', { name: 'Configure Agora' }).click()
+
+      await expect(page).toHaveURL('/configure')
+      await expect(page.getByRole('heading', { name: 'Velô Sprint' })).toBeVisible()
+      await this.expectDefaultConfiguration()
+    },
+
     async selectExteriorColor(color: ExteriorColor) {
       await page.getByRole('button', { name: color }).click()
     },
