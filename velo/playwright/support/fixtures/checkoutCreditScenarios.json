@@ -1,0 +1,95 @@
+[
+  {
+    "title": "deve aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento",
+    "customer": {
+      "name": "Steve",
+      "lastname": "Woz",
+      "email": "woz@velo.dev",
+      "document": "65493881047",
+      "phone": "(11) 99999-9999",
+      "store": "Velô Paulista",
+      "paymentMethod": "Financiamento",
+      "totalPrice": "R$ 40.000,00"
+    },
+    "score": 710,
+    "expectedStatus": "Pedido Aprovado!"
+  },
+  {
+    "title": "deve encaminhar para análise de crédito quando o score do CPF for entre 501 e 700 no financiamento",
+    "customer": {
+      "name": "Tony",
+      "lastname": "Stark",
+      "email": "tony@stark.com",
+      "document": "74690251037",
+      "phone": "(11) 99999-9999",
+      "store": "Velô Paulista",
+      "paymentMethod": "Financiamento",
+      "totalPrice": "R$ 40.000,00"
+    },
+    "score": 600,
+    "expectedStatus": "Pedido em Análise!"
+  },
+  {
+    "title": "deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento sem entrada",
+    "customer": {
+      "name": "Clark",
+      "lastname": "Kent",
+      "email": "clark@dailyplanet.com",
+      "document": "52998224725",
+      "phone": "(11) 99999-9999",
+      "store": "Velô Paulista",
+      "paymentMethod": "Financiamento",
+      "totalPrice": "R$ 40.000,00"
+    },
+    "score": 500,
+    "expectedStatus": "Crédito Reprovado"
+  },
+  {
+    "title": "deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada menor que 50%",
+    "customer": {
+      "name": "Diana",
+      "lastname": "Prince",
+      "email": "diana@themiscira.com",
+      "document": "11144477735",
+      "phone": "(11) 99999-9999",
+      "store": "Velô Paulista",
+      "paymentMethod": "Financiamento",
+      "totalPrice": "R$ 40.000,00",
+      "downPayment": "10000"
+    },
+    "score": 500,
+    "expectedStatus": "Crédito Reprovado"
+  },
+  {
+    "title": "deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada igual a 50%",
+    "customer": {
+      "name": "Richard",
+      "lastname": "Fortus",
+      "email": "richard@gmail.com",
+      "document": "39434745004",
+      "phone": "(11) 99999-9999",
+      "store": "Velô Paulista",
+      "paymentMethod": "Financiamento",
+      "totalPrice": "R$ 40.000,00",
+      "downPayment": "20000"
+    },
+    "score": 450,
+    "expectedStatus": "Pedido Aprovado!"
+  },
+  {
+    "title": "deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada mair que 50%",
+    "customer": {
+      "name": "Axl",
+      "lastname": "Rose",
+      "email": "alx@gnr.com",
+      "document": "79327557000",
+      "phone": "(11) 99999-9999",
+      "store": "Velô Paulista",
+      "paymentMethod": "Financiamento",
+      "totalPrice": "R$ 40.000,00",
+      "downPayment": "30000"
+    },
+    "score": 300,
+    "expectedStatus": "Pedido Aprovado!"
+  }
+]

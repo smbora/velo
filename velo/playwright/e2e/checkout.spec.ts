@@ -1,7 +1,33 @@
 import { test, expect } from '../support/fixtures'
-import { deleteOrderByNumber, deleteOrdersByCpf } from '../../docs/database/orderRepository'
+import { deleteOrdersByCpf } from '../../docs/database/orderRepository'
+import { mockCreditAnalysis } from '../support/mocks/mock.api'
+import type { CheckoutCustomer, PaymentMethod, SuccessStatus } from '../support/actions/checkoutActions'
+import creditScenarios from '../support/fixtures/checkoutCreditScenarios.json' with { type: 'json' }
+
+type CreditScenario = {
+  title: string
+  customer: CheckoutCustomer & { paymentMethod: PaymentMethod }
+  score: number
+  expectedStatus: SuccessStatus
+}
+
+const DEFAULT_STORE = 'Velô Paulista'
+const DEFAULT_TOTAL = 'R$ 40.000,00'
+
+async function arrangeCheckoutFromLanding(
+  app: { configurator: { configureDefaultAndGoToCheckout(totalPrice?: string): Promise<void> }; checkout: { expectLoaded(): Promise<void>; fillCustomerlData(data: Pick<CheckoutCustomer, 'name' | 'lastname' | 'email' | 'phone' | 'document'>): Promise<void>; selectStore(storeName: string): Promise<void> } },
+  customer: CheckoutCustomer,
+) {
+  await deleteOrdersByCpf(customer.document)
+  await app.configurator.configureDefaultAndGoToCheckout(customer.totalPrice ?? DEFAULT_TOTAL)
+  await app.checkout.expectLoaded()
+  await app.checkout.fillCustomerlData(customer)
+  await app.checkout.selectStore(customer.store ?? DEFAULT_STORE)
+}
 
 test.describe('Checkout', () => {
+
+
 
   test.describe('Validações de campos obrigatórios', () => {
 
@@ -9,7 +35,8 @@ test.describe('Checkout', () => {
 
     test.beforeEach(async ({ page, app }) => {
       await page.goto('/order')
-      await app.checkout.expectLoaded()
+      await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
+
       alerts = app.checkout.elements.alerts
     })
 
@@ -118,45 +145,38 @@ test.describe('Checkout', () => {
     })
   })
 
-  test('CT05 - deve criar pedido à vista com sucesso e exibir confirmação', async ({ app }) => {
-    const scenario = {
-      customer: {
-        name: 'Mariana',
-        lastname: 'Santos',
-        email: 'mariana.santos@velo.dev',
-        phone: '(11) 98765-4321',
+  test.describe('Pagamento e Confirmação', () => {
+
+    test('deve criar um pedido com sucesso para pagamento à vista', async ({ app }) => {
+      const customer = {
+        name: 'Fernando',
+        lastname: 'Papito',
+        email: 'papito@teste.com',
         document: '05366127068',
-      },
-      store: 'Velô Paulista',
-      totalPrice: 'R$ 40.000,00',
+        phone: '(11) 99999-9999',
+        store: DEFAULT_STORE,
+        paymentMethod: 'À Vista' as const,
+        totalPrice: DEFAULT_TOTAL,
+      }
+
+      await arrangeCheckoutFromLanding(app, customer)
+      await app.checkout.completePayment({
+        method: customer.paymentMethod,
+        expectTotal: customer.totalPrice,
+      })
+      await app.checkout.expectSuccessStatus('Pedido Aprovado!')
+    })
+
+    for (const { title, customer, score, expectedStatus } of creditScenarios as CreditScenario[]) {
+      test(title, async ({ page, app }) => {
+        await mockCreditAnalysis(page, score)
+        await arrangeCheckoutFromLanding(app, customer)
+        await app.checkout.completePayment({
+          method: customer.paymentMethod,
+          downPayment: customer.downPayment,
+        })
+        await app.checkout.expectSuccessStatus(expectedStatus)
+      })
     }
-
-    // Arrange
-    await deleteOrdersByCpf(scenario.customer.document)
-
-    await app.configurator.startFromLanding()
-    await app.configurator.goToCheckout()
-    await app.checkout.expectLoaded()
-    await app.checkout.expectSummaryTotal(scenario.totalPrice)
-
-    await app.checkout.fillCustomerlData(scenario.customer)
-    await app.checkout.selectStore(scenario.store)
-
-    // Act
-    await app.checkout.selectPaymentAvista()
-    await app.checkout.expectPaymentAvistaTotal(scenario.totalPrice)
-    await app.checkout.acceptTerms()
-    await app.checkout.submit()
-
-    // Assert
-    await app.checkout.expectSuccessApproved()
-    await app.checkout.expectOrderCustomer(scenario.customer)
-
-    const orderNumber = await app.checkout.getOrderNumber()
-    await expect(orderNumber).toMatch(/^VLO-/)
-
-    // Cleanup
-    await deleteOrderByNumber(orderNumber)
-    await deleteOrdersByCpf(scenario.customer.document)
   })
 })

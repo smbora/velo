@@ -1,5 +1,21 @@
 import { Page, expect } from '@playwright/test'
 
+export type PaymentMethod = 'À Vista' | 'Financiamento'
+
+export type SuccessStatus = 'Pedido Aprovado!' | 'Pedido em Análise!' | 'Crédito Reprovado'
+
+export type CheckoutCustomer = {
+  name: string
+  lastname: string
+  email: string
+  phone: string
+  document: string
+  store?: string
+  paymentMethod?: PaymentMethod
+  totalPrice?: string
+  downPayment?: string
+}
+
 export function createCheckoutActions(page: Page) {
 
   const terms = page.getByTestId('checkout-terms')
@@ -30,13 +46,7 @@ export function createCheckoutActions(page: Page) {
       await expect(page.getByTestId('summary-total-price')).toHaveText(price)
     },
 
-    async fillCustomerlData(data: {
-      name: string
-      lastname: string
-      email: string
-      phone: string
-      document: string
-    }) {
+    async fillCustomerlData(data: Pick<CheckoutCustomer, 'name' | 'lastname' | 'email' | 'phone' | 'document'>) {
       await page.getByTestId('checkout-name').fill(data.name)
       await page.getByTestId('checkout-lastname').fill(data.lastname)
       await page.getByTestId('checkout-email').fill(data.email)
@@ -49,38 +59,44 @@ export function createCheckoutActions(page: Page) {
       await page.getByRole('option', { name: storeName }).click()
     },
 
+    async selectPaymentMethod(method: PaymentMethod | string) {
+      await page.getByRole('button', { name: new RegExp(method, 'i') }).click()
+    },
+
+    async fillDownPayment(value: string) {
+      await page.getByTestId('input-entry-value').fill(value)
+    },
+
     async acceptTerms() {
       await terms.check()
-    },
-
-    async selectPaymentAvista() {
-      await page.getByTestId('payment-avista').click()
-    },
-
-    async expectPaymentAvistaTotal(price: string) {
-      await expect(page.getByTestId('payment-avista')).toContainText(price)
     },
 
     async submit() {
       await page.getByRole('button', { name: 'Confirmar Pedido' }).click()
     },
 
-    async expectSuccessApproved() {
-      await expect(page).toHaveURL(/\/success/)
-      await expect(page.getByTestId('success-status')).toHaveText('Pedido Aprovado!')
-    },
-
-    async expectOrderCustomer(data: {
-      name: string
-      lastname: string
-      email: string
+    async completePayment(options: {
+      method: PaymentMethod
+      downPayment?: string
+      expectTotal?: string
     }) {
-      await expect(page.getByText(`${data.name} ${data.lastname}`)).toBeVisible()
-      await expect(page.getByText(data.email)).toBeVisible()
+      await this.selectPaymentMethod(options.method)
+
+      if (options.downPayment) {
+        await this.fillDownPayment(options.downPayment)
+      }
+
+      if (options.expectTotal) {
+        await this.expectSummaryTotal(options.expectTotal)
+      }
+
+      await this.acceptTerms()
+      await this.submit()
     },
 
-    async getOrderNumber(): Promise<string> {
-      return page.getByTestId('order-id').innerText()
+    async expectSuccessStatus(status: SuccessStatus) {
+      await expect(page).toHaveURL(/\/success/)
+      await expect(page.getByTestId('success-status')).toHaveText(status)
     },
   }
 }

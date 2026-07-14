@@ -76,6 +76,12 @@ export function createConfiguratorActions(page: Page) {
       await checkoutButton.click()
     },
 
+    async configureDefaultAndGoToCheckout(totalPrice = 'R$ 40.000,00') {
+      await this.startFromLanding()
+      await this.expectTotalPrice(totalPrice)
+      await this.goToCheckout()
+    },
+
     async expectTotalPrice(price: string) {
       await expect(totalPrice).toHaveText(price)
     },
