@@ -77,7 +77,7 @@
     "expectedStatus": "Pedido Aprovado!"
   },
   {
-    "title": "deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada mair que 50%",
+    "title": "deve aprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada mair que 50%",
     "customer": {
       "name": "Axl",
       "lastname": "Rose",
