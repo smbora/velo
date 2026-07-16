@@ -10,7 +10,7 @@ on:
 
 env:
   NODE_VERSION: "24"
-  VERCEL_TOKEN: vcp_0UpaNiKG4ZfvbWJYcuoI6kLja0saDhkHao7RVe9niNk5jAtNfl3nU1G4
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_SCOPE: sbora
 
 jobs:
@@ -48,6 +48,8 @@ jobs:
     defaults:
       run:
         working-directory: velo
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
     steps:
       - name: Checkout repository
