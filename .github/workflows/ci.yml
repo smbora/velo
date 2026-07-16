@@ -46,6 +46,7 @@ jobs:
     name: Build & Deploy Vercel Preview
     needs: [unit-tests]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -54,7 +55,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6.5.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "22"
           cache: yarn
           cache-dependency-path: velo/yarn.lock
 
@@ -65,33 +66,17 @@ jobs:
         working-directory: velo
         run: yarn install --immutable
 
+      - name: Build application
+        working-directory: velo
+        run: yarn build
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
       - name: Pull Vercel Config
-        run: ./velo/node_modules/.bin/vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
-
-      - name: Build Vercel
-        run: ./velo/node_modules/.bin/vercel build --token=$VERCEL_TOKEN
-
-      - name: Verify build output
-        run: |
-          if [ ! -d .vercel/output ]; then
-            echo "Missing .vercel/output after build"
-            ls -la .vercel/ || true
-            exit 1
-          fi
-          du -sh .vercel/output
+        run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
 
       - name: Deploy Preview no vercel
-        run: |
-          for attempt in 1 2 3; do
-            echo "Deploy attempt ${attempt}/3"
-            if ./velo/node_modules/.bin/vercel deploy --prebuilt --archive=tgz --target=preview --token=$VERCEL_TOKEN; then
-              exit 0
-            fi
-            if [ "$attempt" -lt 3 ]; then
-              echo "Deploy failed, retrying in 15s..."
-              sleep 15
-            fi
-          done
-          exit 1
+        run: vercel deploy --yes --target=preview --token=$VERCEL_TOKEN
 
       
