@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_NBVoqGiCGtGqUngXpQiJi3pWxd0A",
+      "name": "velo",
+      "directory": "velo",
+      "orgId": "team_OUGHsouTWE6dMIuS2chyFtmg"
+    }
+  ]
+}

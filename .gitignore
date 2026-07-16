@@ -1,4 +1,6 @@
 .DS_Store
 .vercel/*
 !.vercel/project.json
+!.vercel/repo.json
+velo/.vercel/
 .env*
