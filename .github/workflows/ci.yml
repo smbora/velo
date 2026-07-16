@@ -10,6 +10,8 @@ on:
 
 env:
   NODE_VERSION: "24"
+  VERCEL_TOKEN: vcp_0UpaNiKG4ZfvbWJYcuoI6kLja0saDhkHao7RVe9niNk5jAtNfl3nU1G4
+  VERCEL_SCOPE: sbora
 
 jobs:
   unit-tests:
@@ -38,3 +40,32 @@ jobs:
 
       - name: Run unit tests
         run: yarn test --run
+        
+  build-and-deploy:
+    name: Build & Deploy Vercel Preview
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: velo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.5.0
+      
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+      
+      - name: Build Vercel
+        run: yarn vercel build --token=$VERCEL_TOKEN
+      
+      - name: Deploy Preview no vercel
+        run: yarn vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
+
+      
