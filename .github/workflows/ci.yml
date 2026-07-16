@@ -15,6 +15,9 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: velo
 
     steps:
       - name: Checkout repository
@@ -24,6 +27,8 @@ jobs:
         uses: actions/setup-node@v6.5.0
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+          cache-dependency-path: velo/yarn.lock
 
       - name: Enable Corepack
         run: corepack enable
@@ -32,4 +37,4 @@ jobs:
         run: yarn install --immutable
 
       - name: Run unit tests
-        run: yarn test
+        run: yarn test --run
