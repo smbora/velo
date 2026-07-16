@@ -71,7 +71,27 @@ jobs:
       - name: Build Vercel
         run: ./velo/node_modules/.bin/vercel build --token=$VERCEL_TOKEN
 
+      - name: Verify build output
+        run: |
+          if [ ! -d .vercel/output ]; then
+            echo "Missing .vercel/output after build"
+            ls -la .vercel/ || true
+            exit 1
+          fi
+          du -sh .vercel/output
+
       - name: Deploy Preview no vercel
-        run: ./velo/node_modules/.bin/vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN
+        run: |
+          for attempt in 1 2 3; do
+            echo "Deploy attempt ${attempt}/3"
+            if ./velo/node_modules/.bin/vercel deploy --prebuilt --archive=tgz --target=preview --token=$VERCEL_TOKEN; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Deploy failed, retrying in 15s..."
+              sleep 15
+            fi
+          done
+          exit 1
 
       
