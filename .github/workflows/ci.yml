@@ -1,0 +1,35 @@
+# Workflow de Integração Contínua focado exclusivamente na execução
+# de testes unitários, com estrutura preparada para futuras expansões.
+
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.5.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Run unit tests
+        run: yarn test
