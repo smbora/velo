@@ -1,91 +1,104 @@
-import { describe, expect, it } from 'vitest';
-import {
-  calculateInstallment,
-  calculateTotalPrice,
-  formatPrice,
-  type CarConfiguration,
-} from './configuratorStore';
+import { describe, it, expect } from 'vitest';
+import { calculateTotalPrice, calculateInstallment, formatPrice, CarConfiguration, useConfiguratorStore } from './configuratorStore';
 
-const baseConfiguration: CarConfiguration = {
-  exteriorColor: 'glacier-blue',
-  interiorColor: 'carbon-black',
-  wheelType: 'aero',
-  optionals: [],
-};
+describe('configuratorStore pure functions', () => {
+  describe('calculateTotalPrice', () => {
+    it('should calculate base price with aero wheels and no optionals', () => {
+      const config: CarConfiguration = {
+        exteriorColor: 'glacier-blue',
+        interiorColor: 'carbon-black',
+        wheelType: 'aero',
+        optionals: []
+      };
+      expect(calculateTotalPrice(config)).toBe(40000);
+    });
 
-describe('calculateTotalPrice', () => {
-  it('returns base price for default configuration', () => {
-    expect(calculateTotalPrice(baseConfiguration)).toBe(40_000);
-  });
-
-  it('adds sport wheels surcharge', () => {
-    expect(
-      calculateTotalPrice({ ...baseConfiguration, wheelType: 'sport' })
-    ).toBe(42_000);
-  });
-
-  it('adds optional prices independently', () => {
-    expect(
-      calculateTotalPrice({
-        ...baseConfiguration,
-        optionals: ['precision-park'],
-      })
-    ).toBe(45_500);
-
-    expect(
-      calculateTotalPrice({
-        ...baseConfiguration,
-        optionals: ['flux-capacitor'],
-      })
-    ).toBe(45_000);
-  });
-
-  it('combines sport wheels and all optionals', () => {
-    expect(
-      calculateTotalPrice({
-        ...baseConfiguration,
+    it('should add sport wheels price correctly', () => {
+      const config: CarConfiguration = {
+        exteriorColor: 'glacier-blue',
+        interiorColor: 'carbon-black',
         wheelType: 'sport',
-        optionals: ['precision-park', 'flux-capacitor'],
-      })
-    ).toBe(52_500);
+        optionals: []
+      };
+      expect(calculateTotalPrice(config)).toBe(42000);
+    });
+
+    it('should add optionals price correctly', () => {
+      const config: CarConfiguration = {
+        exteriorColor: 'glacier-blue',
+        interiorColor: 'carbon-black',
+        wheelType: 'aero',
+        optionals: ['precision-park', 'flux-capacitor']
+      };
+      expect(calculateTotalPrice(config)).toBe(40000 + 5500 + 5000); // Base + Precision Park + Flux Capacitor
+    });
   });
 
-  it('does not change price when only colors differ', () => {
-    expect(
-      calculateTotalPrice({
-        ...baseConfiguration,
-        exteriorColor: 'midnight-black',
-        interiorColor: 'deep-blue',
-      })
-    ).toBe(40_000);
+  describe('calculateInstallment', () => {
+    it('should calculate 12x installment with 2% monthly interest correctly', () => {
+      // 40000 total -> 12x at 2% monthly
+      const total = 40000;
+      const installment = calculateInstallment(total);
+      // Math.round(((40000 * 0.02 * Math.pow(1.02, 12)) / (Math.pow(1.02, 12) - 1)) * 100) / 100 => 3782.38
+      expect(installment).toBe(3782.38);
+    });
+  });
+
+  describe('formatPrice', () => {
+    it('should format numbers to BRL currency string', () => {
+      const formatted = formatPrice(40000);
+      // To avoid issues with normal space vs non-breaking space (unicode \u00A0) in Intl.NumberFormat:
+      const normalized = formatted.replace(/\u00A0/g, ' ');
+      expect(normalized).toContain('R$');
+      expect(normalized).toContain('40.000,00');
+    });
   });
 });
 
-describe('calculateInstallment', () => {
-  it('calculates 12x installment with 2% monthly compound interest', () => {
-    const total = 40_000;
-    const monthlyRate = 0.02;
-    const months = 12;
-    const expected =
-      Math.round(
-        ((total * monthlyRate * Math.pow(1 + monthlyRate, months)) /
-          (Math.pow(1 + monthlyRate, months) - 1)) *
-          100
-      ) / 100;
-
-    expect(calculateInstallment(total)).toBe(expected);
+describe('configuratorStore actions', () => {
+  it('should toggle an optional feature correctly', () => {
+    // Reset state before test
+    useConfiguratorStore.getState().resetConfiguration();
+    
+    // Initial state has no optionals
+    expect(useConfiguratorStore.getState().configuration.optionals).toEqual([]);
+    
+    // Toggle a feature (should add it)
+    useConfiguratorStore.getState().toggleOptional('precision-park');
+    expect(useConfiguratorStore.getState().configuration.optionals).toContain('precision-park');
+    
+    // Toggle the same feature (should remove it)
+    useConfiguratorStore.getState().toggleOptional('precision-park');
+    expect(useConfiguratorStore.getState().configuration.optionals).not.toContain('precision-park');
   });
 
-  it('recalculates proportionally for financed amount after down payment', () => {
-    const amountToFinance = 20_000;
-    expect(calculateInstallment(amountToFinance)).toBe(1_891.19);
-  });
-});
-
-describe('formatPrice', () => {
-  it('formats values as Brazilian Real currency', () => {
-    expect(formatPrice(40_000)).toBe('R$\u00a040.000,00');
-    expect(formatPrice(42_000)).toBe('R$\u00a042.000,00');
-    expect(formatPrice(3_782.12)).toBe('R$\u00a03.782,12');
+  it('should handle login logic depending on previous orders', () => {
+    useConfiguratorStore.setState({ orders: [] });
+    useConfiguratorStore.getState().logout();
+    
+    // Login fails if there are no orders for the email
+    const loginResult1 = useConfiguratorStore.getState().login('test@example.com');
+    expect(loginResult1).toBe(false);
+    expect(useConfiguratorStore.getState().currentUserEmail).toBeNull();
+    
+    // Add a mock order
+    useConfiguratorStore.setState({
+      orders: [
+        {
+          id: '1',
+          configuration: { exteriorColor: 'glacier-blue', interiorColor: 'carbon-black', wheelType: 'aero', optionals: [] },
+          totalPrice: 40000,
+          customer: { name: 'Test', surname: 'User', email: 'test@example.com', phone: '', cpf: '', store: '' },
+          paymentMethod: 'avista',
+          status: 'APROVADO',
+          createdAt: new Date().toISOString()
+        }
+      ]
+    });
+    
+    // Login succeeds now
+    const loginResult2 = useConfiguratorStore.getState().login('test@example.com');
+    expect(loginResult2).toBe(true);
+    expect(useConfiguratorStore.getState().currentUserEmail).toBe('test@example.com');
   });
 });

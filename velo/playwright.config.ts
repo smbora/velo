@@ -12,11 +12,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+const vercelBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  timeout: 5000,
+  timeout: 30_000,
   testDir: './playwright/e2e',
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -24,16 +26,24 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Limit parallelism against remote Vercel deployments */
+  workers: process.env.CI ? 1 : 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:5173',
+    baseURL: 'https://velo-h99fu18yy-sbora.vercel.app/',
 
     headless: false,
+
+    /* Bypass Vercel Deployment Protection (Settings → Deployment Protection → Protection Bypass for Automation) */
+    extraHTTPHeaders: vercelBypassSecret
+      ? {
+          'x-vercel-protection-bypass': vercelBypassSecret,
+          'x-vercel-set-bypass-cookie': 'true',
+        }
+      : {},
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -77,10 +87,4 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'yarn dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-  },
 });

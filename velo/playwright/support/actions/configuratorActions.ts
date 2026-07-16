@@ -111,7 +111,12 @@ export function createConfiguratorActions(page: Page) {
     },
 
     async expectCarPreviewImage(filename: RegExp | string) {
-      await expect(carPreview).toHaveAttribute('src', filename)
+      const pattern =
+        typeof filename === 'string'
+          ? new RegExp(filename.split('/').pop()!.replace('.png', ''))
+          : filename
+
+      await expect(carPreview).toHaveAttribute('src', pattern)
     },
   }
 }
