@@ -35,7 +35,7 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('')`. */
     baseURL: process.env.BASE_URL || 'http://localhost:5173/',
 
-    headless: false,
+    headless: !!process.env.CI,
 
     /* Bypass Vercel Deployment Protection (Settings → Deployment Protection → Protection Bypass for Automation) */
     extraHTTPHeaders: vercelBypassSecret
@@ -87,9 +87,13 @@ export default defineConfig({
     // },
   ],
 
-  webServer: {
-    command: 'yarn dev',
-    url: 'http://localhost:5173/',
-    reuseExistingServer: !process.env.CI,
-  },
+  ...(process.env.BASE_URL
+    ? {}
+    : {
+        webServer: {
+          command: 'yarn dev',
+          url: 'http://localhost:5173/',
+          reuseExistingServer: !process.env.CI,
+        },
+      }),
 });
