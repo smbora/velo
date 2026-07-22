@@ -81,7 +81,7 @@ jobs:
       - name: Deploy Preview no vercel
         id: deploy
         run: |
-          URL=$(vercel deploy --yes --target=preview --token=$VERCEL_TOKEN --project-id=$VERCEL_PROJECT_ID --org-id=$VERCEL_ORG_ID)
+          URL=$(vercel deploy --yes --target=preview --token=$VERCEL_TOKEN)
           echo "deployment-url=$URL" >> $GITHUB_OUTPUT
 
   e2e-tests:
