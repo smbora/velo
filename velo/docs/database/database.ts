@@ -1,7 +1,10 @@
+import dns from 'node:dns'
 import 'dotenv/config'
 import pg from 'pg'
 import { Kysely, PostgresDialect } from 'kysely'
 import type { Database } from './schema'
+
+dns.setDefaultResultOrder('ipv4first')
 
 const dialect = new PostgresDialect({
   pool: new pg.Pool({
