@@ -145,7 +145,7 @@ test.describe('Checkout', () => {
     })
   })
 
-  test.describe('Pagamento e Confirmação', () => {
+  test.describe('Pagamento e Confirmação', { tag: '@db' }, () => {
 
     test('deve criar um pedido com sucesso para pagamento à vista', async ({ app }) => {
       const customer = {

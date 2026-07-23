@@ -1,5 +1,5 @@
 import crypto from 'crypto'
-import { db } from './database'
+import { getDb } from './database'
 import type { OrderTable } from './schema'
 import type { OrderDetails } from '../../playwright/support/actions/orderLockupActions'
 
@@ -40,11 +40,11 @@ export async function insertOrder(order: OrderDetails) {
     optionals: [],
   }
 
-  await db.insertInto('orders').values(data).execute()
+  await getDb().insertInto('orders').values(data).execute()
 }
 
 export async function deleteOrderByNumber(orderNumber: string) {
-  await db.deleteFrom('orders').where('order_number', '=', orderNumber).execute()
+  await getDb().deleteFrom('orders').where('order_number', '=', orderNumber).execute()
 }
 
 function toMaskedCpf(cpf: string): string {
@@ -56,7 +56,7 @@ export async function deleteOrdersByCpf(cpf: string) {
   const digits = cpf.replace(/\D/g, '')
   const masked = toMaskedCpf(digits)
 
-  await db
+  await getDb()
     .deleteFrom('orders')
     .where((eb) =>
       eb.or([

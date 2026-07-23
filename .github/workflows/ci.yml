@@ -113,7 +113,13 @@ jobs:
         run: yarn playwright install --with-deps chromium
 
       - name: Run E2E Regression Tests
-        run: yarn playwright test
+        run: |
+          if [ -n "$DATABASE_URL" ]; then
+            yarn playwright test
+          else
+            echo "::warning::DATABASE_URL secret not configured — skipping @db tests"
+            yarn playwright test --grep-invert @db
+          fi
         env:
           BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

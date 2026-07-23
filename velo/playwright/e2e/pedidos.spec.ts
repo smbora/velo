@@ -11,7 +11,7 @@ test.describe('Consulta de Pedido', () => {
   })
 
   for (const { title, order } of pedidosScenarios) {
-    test(title, async ({ app }) => {
+    test(title, { tag: '@db' }, async ({ app }) => {
       const orderDetails = order as OrderDetails
 
       await deleteOrderByNumber(orderDetails.number)
