@@ -1,7 +1,7 @@
 # Workflow de Integração Contínua focado exclusivamente na execução
 # de testes unitários, com estrutura preparada para futuras expansões.
 
-name: Continuous Integration
+name: Continuous Deployment
 
 on:
   push:
@@ -132,6 +132,15 @@ jobs:
           name: playwright-report
           path: velo/playwright-report/
 
+  promote:
+    name: Promote to Production
+    needs: [build-and-deploy, e2e-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
 
-
-      
+      - name: Promote preview deployment to production
+        run: vercel promote "$DEPLOYMENT_URL" --yes --token=$VERCEL_TOKEN
+        env:
+          DEPLOYMENT_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
