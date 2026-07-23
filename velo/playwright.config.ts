@@ -29,7 +29,13 @@ export default defineConfig({
   /* Limit parallelism against remote Vercel deployments */
   workers: process.env.CI ? 1 : 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [
+    ['html'],
+    ['@testdino/playwright', {
+      token: process.env.TESTDINO_TOKEN,
+      serverUrl: process.env.TESTDINO_SERVER_URL || 'https://reporter.testdino.com',
+    }],
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
