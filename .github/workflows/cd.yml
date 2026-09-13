@@ -149,6 +149,18 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      # Fresh production build (not vercel promote) so the bundle gets Production VITE_SUPABASE_*.
+      # Fresh production build (not vercel promote) with Velô VITE_SUPABASE_* from GitHub secrets.
       - name: Deploy Production
-        run: vercel deploy --yes --prod --token=$VERCEL_TOKEN
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL_PRODUCTION }}
+          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID_PRODUCTION }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY_PRODUCTION }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Configure GitHub secrets VITE_SUPABASE_URL_PRODUCTION and VITE_SUPABASE_PUBLISHABLE_KEY_PRODUCTION"
+            exit 1
+          fi
+          vercel deploy --yes --prod --token="$VERCEL_TOKEN" \
+            --build-env "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" \
+            --build-env "VITE_SUPABASE_PROJECT_ID=$VITE_SUPABASE_PROJECT_ID" \
+            --build-env "VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY"

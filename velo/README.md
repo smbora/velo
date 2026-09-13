@@ -109,13 +109,14 @@ A solução: **dois deploys distintos**.
 
 1. **Preview** — `vercel deploy --target=preview` com `--build-env` das `VITE_SUPABASE_*` de preview (secrets no GitHub: `VITE_SUPABASE_URL_PREVIEW`, `VITE_SUPABASE_PROJECT_ID_PREVIEW`, `VITE_SUPABASE_PUBLISHABLE_KEY_PREVIEW`). A UI da Vercel não permitiu uma segunda `VITE_SUPABASE_URL` só para Preview (conflito com variável fantasma `branch undefined`).
 2. **E2E** — Playwright usa `BASE_URL` da URL Visit do preview e `DATABASE_URL` no GitHub igual ao **Session pooler** do preview (`postgres.dvmnpucvjjafxpmrctze` em `aws-1-us-west-2.pooler.supabase.com:5432`). Pedidos da suíte não devem aparecer no Velô.
-3. **Produção** — `vercel deploy --prod` (build novo, não promote), com `VITE_SUPABASE_*` do ambiente Production na Vercel apontando para o Velô.
+3. **Produção** — `vercel deploy --prod` (build novo, não promote) com `--build-env` das `VITE_SUPABASE_*` de produção (secrets `VITE_SUPABASE_URL_PRODUCTION`, `VITE_SUPABASE_PROJECT_ID_PRODUCTION`, `VITE_SUPABASE_PUBLISHABLE_KEY_PRODUCTION` apontando para o Velô). Assim o bundle de prod não depende da UI da Vercel.
 
 Pipeline: Unit Tests → Preview → E2E → Production. Produção só sobe se o E2E passar.
 
 ### Secrets (GitHub Actions, não commitar)
 
 - `VITE_SUPABASE_URL_PREVIEW`, `VITE_SUPABASE_PROJECT_ID_PREVIEW`, `VITE_SUPABASE_PUBLISHABLE_KEY_PREVIEW`
+- `VITE_SUPABASE_URL_PRODUCTION`, `VITE_SUPABASE_PROJECT_ID_PRODUCTION`, `VITE_SUPABASE_PUBLISHABLE_KEY_PRODUCTION`
 - `DATABASE_URL` — session pooler do **preview**
 - `VERCEL_TOKEN`, `TESTDINO_TOKEN`, `VERCEL_AUTOMATION_BYPASS_SECRET` (se houver Deployment Protection)
 
