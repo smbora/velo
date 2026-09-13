@@ -29,3 +29,8 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Secrets and local Supabase CLI state
+docs/db-password.txt
+docs/promtps/api-testdino.txt
+supabase/.temp/

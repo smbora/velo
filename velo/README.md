@@ -80,6 +80,53 @@ yarn supabase functions deploy
 
 Pronto! O banco e as functions estarão configurados.
 
+Antes de `db push` ou `functions deploy`, confirme o projeto ativo:
+
+```bash
+yarn supabase projects list
+```
+
+O `●` precisa estar no projeto certo (preview ou produção). O CLI lembra só o último `link`.
+
+---
+
+## Ambientes Preview e Produção
+
+O app usa dois projetos Supabase. Variáveis `VITE_*` são **embutidas no bundle no build**; não dá para trocá-las só mudando o domínio.
+
+| Ambiente | Projeto Supabase | Ref | Papel |
+|----------|------------------|-----|--------|
+| Produção | Velô | `lzgfxkbbuvlvwctjpkcx` | Site no ar |
+| Preview | velo-sprint-preview | `dvmnpucvjjafxpmrctze` | Deploy de preview + E2E |
+
+Preview e produção têm o mesmo schema (`supabase/migrations`) e a Edge Function `credit-analysis`.
+
+### Por que não usamos `vercel promote`
+
+`vercel promote` reaponta o domínio de produção para um **deploy já existente**. O deploy de preview é gerado com o Supabase de **preview**. Promovê-lo faria a produção ler e gravar nesse banco.
+
+A solução: **dois deploys distintos**.
+
+1. **Preview** — `vercel deploy --target=preview` com `--build-env` das `VITE_SUPABASE_*` de preview (secrets no GitHub: `VITE_SUPABASE_URL_PREVIEW`, `VITE_SUPABASE_PROJECT_ID_PREVIEW`, `VITE_SUPABASE_PUBLISHABLE_KEY_PREVIEW`). A UI da Vercel não permitiu uma segunda `VITE_SUPABASE_URL` só para Preview (conflito com variável fantasma `branch undefined`).
+2. **E2E** — Playwright usa `BASE_URL` da URL Visit do preview e `DATABASE_URL` no GitHub igual ao **Session pooler** do preview (`postgres.dvmnpucvjjafxpmrctze` em `aws-1-us-west-2.pooler.supabase.com:5432`). Pedidos da suíte não devem aparecer no Velô.
+3. **Produção** — `vercel deploy --prod` (build novo, não promote), com `VITE_SUPABASE_*` do ambiente Production na Vercel apontando para o Velô.
+
+Pipeline: Unit Tests → Preview → E2E → Production. Produção só sobe se o E2E passar.
+
+### Secrets (GitHub Actions, não commitar)
+
+- `VITE_SUPABASE_URL_PREVIEW`, `VITE_SUPABASE_PROJECT_ID_PREVIEW`, `VITE_SUPABASE_PUBLISHABLE_KEY_PREVIEW`
+- `DATABASE_URL` — session pooler do **preview**
+- `VERCEL_TOKEN`, `TESTDINO_TOKEN`, `VERCEL_AUTOMATION_BYPASS_SECRET` (se houver Deployment Protection)
+
+Não versionar senha de banco, token TestDino nem `supabase/.temp/`.
+
+### Conferência rápida
+
+- Preview `/lookup` → Network → `dvmnpucvjjafxpmrctze.supabase.co`
+- Produção `/lookup` → Network → `lzgfxkbbuvlvwctjpkcx.supabase.co`
+- Table Editor: pedidos `VLO-*` da suíte CI no preview; os mesmos códigos novos **não** no Velô
+
 ---
 
 ## Estrutura Principal
