@@ -58,29 +58,16 @@ jobs:
         uses: actions/setup-node@v6.5.0
         with:
           node-version: "22"
-          cache: yarn
-          cache-dependency-path: velo/yarn.lock
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        working-directory: velo
-        run: yarn install --immutable
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Pull Vercel Preview Config
-        run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
-
-      - name: Build for Preview
-        run: vercel build --token=$VERCEL_TOKEN
-
+      # Remote preview build so Vercel injects Preview VITE_SUPABASE_* and applies velo/vercel.json rewrites.
+      # --prebuilt from the monorepo root was serving only / and 404ing /order and /configure.
       - name: Deploy Preview
         id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --yes --target=preview --token=$VERCEL_TOKEN)
+          URL=$(vercel deploy --yes --target=preview --token=$VERCEL_TOKEN)
           echo "deployment-url=$URL" >> $GITHUB_OUTPUT
 
   e2e-tests:
@@ -146,24 +133,10 @@ jobs:
         uses: actions/setup-node@v6.5.0
         with:
           node-version: "22"
-          cache: yarn
-          cache-dependency-path: velo/yarn.lock
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        working-directory: velo
-        run: yarn install --immutable
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Pull Vercel Production Config
-        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
-
-      - name: Build for Production
-        run: vercel build --prod --token=$VERCEL_TOKEN
-
+      # Fresh production build (not vercel promote) so the bundle gets Production VITE_SUPABASE_*.
       - name: Deploy Production
-        run: vercel deploy --prebuilt --prod --yes --token=$VERCEL_TOKEN
+        run: vercel deploy --yes --prod --token=$VERCEL_TOKEN
