@@ -68,20 +68,19 @@ jobs:
         working-directory: velo
         run: yarn install --immutable
 
-      - name: Build application
-        working-directory: velo
-        run: yarn build
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Pull Vercel Config
+      - name: Pull Vercel Preview Config
         run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
 
-      - name: Deploy Preview no vercel
+      - name: Build for Preview
+        run: vercel build --token=$VERCEL_TOKEN
+
+      - name: Deploy Preview
         id: deploy
         run: |
-          URL=$(vercel deploy --yes --target=preview --token=$VERCEL_TOKEN)
+          URL=$(vercel deploy --prebuilt --yes --target=preview --token=$VERCEL_TOKEN)
           echo "deployment-url=$URL" >> $GITHUB_OUTPUT
 
   e2e-tests:
@@ -134,15 +133,37 @@ jobs:
           name: playwright-report
           path: velo/playwright-report/
 
-  promote:
-    name: Promote to Production
+  deploy-production:
+    name: Deploy Production
     needs: [build-and-deploy, e2e-tests]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.5.0
+        with:
+          node-version: "22"
+          cache: yarn
+          cache-dependency-path: velo/yarn.lock
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        working-directory: velo
+        run: yarn install --immutable
+
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Promote preview deployment to production
-        run: vercel promote "$DEPLOYMENT_URL" --yes --token=$VERCEL_TOKEN
-        env:
-          DEPLOYMENT_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
+      - name: Pull Vercel Production Config
+        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+
+      - name: Build for Production
+        run: vercel build --prod --token=$VERCEL_TOKEN
+
+      - name: Deploy Production
+        run: vercel deploy --prebuilt --prod --yes --token=$VERCEL_TOKEN
