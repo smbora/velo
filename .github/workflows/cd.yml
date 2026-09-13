@@ -62,13 +62,25 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      # Remote preview build so Vercel injects Preview VITE_SUPABASE_* and applies velo/vercel.json rewrites.
-      # --prebuilt from the monorepo root was serving only / and 404ing /order and /configure.
+      # Remote preview build applies velo/vercel.json rewrites.
+      # VITE_* are passed with --build-env because the Vercel dashboard cannot
+      # store a second VITE_SUPABASE_URL for Preview (ghost "branch undefined").
       - name: Deploy Preview
         id: deploy
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL_PREVIEW }}
+          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID_PREVIEW }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY_PREVIEW }}
         run: |
-          URL=$(vercel deploy --yes --target=preview --token=$VERCEL_TOKEN)
-          echo "deployment-url=$URL" >> $GITHUB_OUTPUT
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Configure GitHub secrets VITE_SUPABASE_URL_PREVIEW and VITE_SUPABASE_PUBLISHABLE_KEY_PREVIEW"
+            exit 1
+          fi
+          URL=$(vercel deploy --yes --target=preview --token="$VERCEL_TOKEN" \
+            --build-env "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" \
+            --build-env "VITE_SUPABASE_PROJECT_ID=$VITE_SUPABASE_PROJECT_ID" \
+            --build-env "VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY")
+          echo "deployment-url=$URL" >> "$GITHUB_OUTPUT"
 
   e2e-tests:
     name: Run E2E Tests
